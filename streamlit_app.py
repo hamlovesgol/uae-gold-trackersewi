@@ -56,4 +56,44 @@ with pred_col:
 
 with target_col:
     st.write("### 🕒 Optimal Entry/Exit Windows")
-    t1, t2, t3 = st.columns(3
+    t1, t2, t3 = st.columns(3)
+    t1.info(f"**Short Term**\n\nBuy: {monthly_avg*0.98:.1f}\n\nSell: {monthly_avg*1.02:.1f}")
+    t2.info(f"**Mid Term**\n\nBuy: {monthly_avg*0.96:.1f}\n\nSell: {monthly_avg*1.06:.1f}")
+    t3.info(f"**Long Term**\n\nBuy: {monthly_avg*0.94:.1f}\n\nSell: {monthly_avg*1.12:.1f}")
+
+st.divider()
+
+# --- 4. THE SIMULATOR (Trial & Error) ---
+st.subheader("🎮 Strategy Simulator")
+sim_1, sim_2, sim_3 = st.columns(3)
+
+u_buy = sim_1.number_input("Purchase Price (AED/g)", value=kt_24k, step=0.1)
+u_invest = sim_2.number_input("Total Investment (AED)", value=1000, step=100)
+u_future = sim_3.slider("Predicted Sale Price (AED/g)", 450.0, 650.0, kt_24k + 5.0)
+
+# Exact ROI Calculations
+total_grams = u_invest / u_buy
+current_value = total_grams * u_future
+net_profit = current_value - u_invest
+roi_perc = (net_profit / u_invest) * 100
+
+if net_profit >= 0:
+    st.write(f"### 📈 Projected Profit: **{net_profit:.2f} AED** ({roi_perc:.2f}%)")
+else:
+    st.write(f"### 📉 Projected Loss: **{abs(net_profit):.2f} AED** ({roi_perc:.2f}%)")
+
+st.divider()
+
+# --- 5. PERFORMANCE TREND ---
+st.subheader("📊 24K Performance Trend (Newest → Oldest)")
+hist_dates = [f"{i} Apr" for i in range(13, 0, -1)] + [f"{i} Mar" for i in range(31, 14, -1)]
+df_chart = pd.DataFrame({'Date': hist_dates, 'Price (AED)': hist_prices})
+st.line_chart(df_chart.set_index('Date'), color="#f0c05a")
+
+# --- AUTOMATION ---
+if "trigger" in st.query_params:
+    try:
+        requests.post(f"https://ntfy.sh/hamdan_gold_alerts_2026", 
+                      data=f"Gold: {kt_24k} AED | Ounce: {kt_ounce} AED".encode('utf-8'))
+    except:
+        pass
