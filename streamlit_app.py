@@ -6,7 +6,7 @@ from datetime import datetime
 # Page Config
 st.set_page_config(page_title="UAE Gold Intelligence", page_icon="🏦", layout="wide")
 
-# Corrected Premium CSS
+# Premium UI Styling
 st.markdown("""
     <style>
     .main { background-color: #0e1117; }
@@ -25,23 +25,20 @@ hist_prices = [
 ]
 monthly_avg = sum(hist_prices) / len(hist_prices)
 
-# Exact Live Prices (Updated per your newest data)
+# Exact Live Prices (Evening/Newest from your data)
 kt_24k = 569.75
-kt_ounce = 17721.00
 gn_24k = 569.75
+kt_ounce = 17721.00
 
 # --- 1. HEADER ---
 st.title("🏦 UAE Gold Intelligence Terminal")
-st.caption(f"Market Status: LIVE | Last Update: {datetime.now().strftime('%H:%M:%S')}")
+st.caption(f"Market Status: LIVE | Sync Time: {datetime.now().strftime('%H:%M:%S')}")
 
 # --- 2. LIVE PRICE TRACKER ---
-col1, col2, col3 = st.columns(3)
-with col1:
-    st.metric("Khaleej Times 24K", f"{kt_24k} AED")
-with col2:
-    st.metric("Gulf News 24K", f"{gn_24k} AED")
-with col3:
-    st.metric("Gold Ounce (KT)", f"{kt_ounce:,.2f} AED")
+c1, c2, c3 = st.columns(3)
+c1.metric("Khaleej Times 24K", f"{kt_24k} AED")
+c2.metric("Gulf News 24K", f"{gn_24k} AED")
+c3.metric("Live Ounce (KT)", f"{kt_ounce:,.2f} AED")
 
 st.divider()
 
@@ -51,53 +48,12 @@ pred_col, target_col = st.columns([1, 1.5])
 
 with pred_col:
     if kt_24k > monthly_avg:
-        st.warning("🔮 **PREDICTOR: EXPECTED DROP**")
-        st.write("Market price is currently above the 30-day mean. A pull-back is statistically likely.")
+        st.warning("🔮 **PREDICTOR: LIKELY LOWER**")
+        st.write("Current market price is above the 30-day mean. A pull-back is statistically probable.")
     else:
-        st.success("🔮 **PREDICTOR: UPSIDE POTENTIAL**")
-        st.write("Current rates are favorable compared to the monthly average cycle.")
+        st.success("🔮 **PREDICTOR: LIKELY HIGHER**")
+        st.write("Favorable entry zone detected based on monthly price cycles.")
 
 with target_col:
     st.write("### 🕒 Optimal Entry/Exit Windows")
-    t1, t2, t3 = st.columns(3)
-    t1.info(f"**Short Term**\n\nBuy: {monthly_avg*0.98:.1f}\n\nSell: {monthly_avg*1.02:.1f}")
-    t2.info(f"**Mid Term**\n\nBuy: {monthly_avg*0.96:.1f}\n\nSell: {monthly_avg*1.06:.1f}")
-    t3.info(f"**Long Term**\n\nBuy: {monthly_avg*0.94:.1f}\n\nSell: {monthly_avg*1.12:.1f}")
-
-st.divider()
-
-# --- 4. THE SIMULATOR ---
-st.subheader("🎮 Strategy Simulator (Trial & Error)")
-sim_col1, sim_col2, sim_col3 = st.columns(3)
-with sim_col1:
-    u_buy = st.number_input("Your Buy Price (AED/g)", value=kt_24k, step=0.1)
-with sim_col2:
-    u_invest = st.number_input("Total Investment (AED)", value=1000, step=100)
-with sim_col3:
-    u_future = st.slider("Predicted Sale Price (AED/g)", 450.0, 650.0, kt_24k + 5.0)
-
-# Calculations
-grams = u_invest / u_buy
-profit = (grams * u_future) - u_invest
-roi = (profit / u_invest) * 100
-
-if profit >= 0:
-    st.write(f"### 📈 Projected Profit: **{profit:.2f} AED** ({roi:.2f}%)")
-else:
-    st.write(f"### 📉 Projected Loss: **{abs(profit):.2f} AED** ({roi:.2f}%)")
-
-st.divider()
-
-# --- 5. HISTORICAL TREND ---
-st.subheader("📊 24K Performance Trend")
-hist_dates = [f"{i} Apr" for i in range(13, 0, -1)] + [f"{i} Mar" for i in range(31, 14, -1)]
-df = pd.DataFrame({'Date': hist_dates, 'Price (AED)': hist_prices})
-st.line_chart(df.set_index('Date'), color="#f0c05a")
-
-# --- AUTOMATION ---
-if "trigger" in st.query_params:
-    try:
-        requests.post(f"https://ntfy.sh/hamdan_gold_alerts_2026", 
-                      data=f"Gold: {kt_24k} AED | Ounce: {kt_ounce} AED".encode('utf-8'))
-    except:
-        pass
+    t1, t2, t3 = st.columns(3
