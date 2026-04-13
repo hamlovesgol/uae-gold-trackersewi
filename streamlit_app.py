@@ -1,17 +1,13 @@
 import streamlit as st
 import requests
 import pandas as pd
-from bs4 import BeautifulSoup
 from datetime import datetime
 
 # Page Config
-st.set_page_config(page_title="UAE Gold Predictor Pro", page_icon="📈", layout="wide")
+st.set_page_config(page_title="UAE Gold Predictor Pro", page_icon="💰", layout="wide")
 
-# --- DATA CONFIGURATION ---
-NTFY_TOPIC = "hamdan_gold_alerts_2026" 
-
-# Historical 24K data (Latest to Oldest)
-hist_dates = [f"{i} Apr" for i in range(13, 0, -1)] + [f"{i} Mar" for i in range(31, 14, -1)]
+# --- DATA & CONSTANTS ---
+# Historical data from your provided list (30 days)
 hist_prices = [
     569.75, 572.25, 572.25, 575.00, 577.25, 569.25, 566.25, 561.00, 563.50, 
     563.50, 563.50, 563.00, 573.00, 563.25, 541.75, 541.25, 541.25, 545.25, 
@@ -19,59 +15,70 @@ hist_prices = [
     600.00, 602.50, 604.75
 ]
 monthly_avg = sum(hist_prices) / len(hist_prices)
-
-# --- SCRAPING FUNCTIONS (EXACT LIVE DATA) ---
-
-def get_live_prices():
-    """Fetches exact live prices from the requested sources"""
-    try:
-        # These represent the exact newest points from your provided screenshots
-        # In the real app, BeautifulSoup will pull the 'Afternoon' or 'Evening' column
-        kt_24k = 569.75  # Newest 'Evening' price from your Screenshot
-        kt_ounce = 17721.00
-        gn_24k = 569.75  # Exact newest point from Gulf News chart
-        return kt_24k, kt_ounce, gn_24k
-    except:
-        return 569.75, 17721.00, 569.75
+current_price = 569.75  # Newest price from your screenshot
 
 # --- APP UI ---
-st.title("💰 UAE Gold Live Tracker")
-st.write(f"**Last Update Sync:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+st.title("🇦🇪 UAE Gold Investment Pro")
 
-kt_24k, kt_ounce, gn_24k = get_live_prices()
-
-# 1. LIVE METRICS (Exact Prices)
+# 1. LIVE METRICS
 m1, m2, m3 = st.columns(3)
-m1.metric("Khaleej Times 24K", f"{kt_24k} AED")
-m2.metric("Gulf News 24K", f"{gn_24k} AED")
-m3.metric("Live Ounce (KT)", f"{kt_ounce:,} AED")
+m1.metric("Current 24K (AED)", f"{current_price}")
+m2.metric("Monthly Average", f"{monthly_avg:.2f}")
+m3.metric("Market Status", "Stable" if abs(current_price - monthly_avg) < 5 else "Volatile")
 
 st.divider()
 
-# 2. SMART ADVICE (Now above the chart)
-st.subheader("🤖 Smart Investment Advice")
-if kt_24k < monthly_avg:
-    st.success(f"### ✅ BUY NOW\nCurrent price ({kt_24k}) is below the monthly average ({monthly_avg:.2f} AED).")
+# 2. SMART INVESTMENT ADVICE & PREDICTOR
+st.subheader("🤖 Smart Predictor & Targets")
+col_a, col_b = st.columns(2)
+
+with col_a:
+    st.write("### 🔮 Next-Move Predictor")
+    if current_price > monthly_avg:
+        st.error("**Forecast: LIKELY LOWER**")
+        st.write("Price is currently above the 30-day mean. Expect a correction soon.")
+    else:
+        st.success("**Forecast: LIKELY HIGHER**")
+        st.write("Price is below or near the average. Upside potential is higher.")
+
+with col_b:
+    st.write("### 🎯 Perfect Entry/Exit Targets")
+    st.write(f"**Short Term (1-4 Weeks):** Buy at **{monthly_avg*0.97:.1f}**, Sell at **{monthly_avg*1.03:.1f}**")
+    st.write(f"**Mid Term (3-6 Months):** Buy at **{monthly_avg*0.95:.1f}**, Sell at **{monthly_avg*1.08:.1f}**")
+    st.write(f"**Long Term (7+ Months):** Buy at **{monthly_avg*0.93:.1f}**, Sell at **{monthly_avg*1.15:.1f}**")
+
+st.divider()
+
+# 3. THE "TRIAL & ERROR" PROFIT GAME
+st.subheader("🎮 Investment Simulator (Trial & Error)")
+st.write("Test your strategy! See what happens if you buy now and the price changes.")
+
+sim_col1, sim_col2, sim_col3 = st.columns(3)
+
+with sim_col1:
+    buy_price = st.number_input("Your Buy Price (AED)", value=current_price)
+with sim_col2:
+    investment = st.number_input("Amount to Invest (AED)", value=1000)
+with sim_col3:
+    future_price = st.slider("Test a Future Price (AED)", min_value=450.0, max_value=650.0, value=current_price + 10)
+
+# Calculations
+grams_bought = investment / buy_price
+current_value = grams_bought * future_price
+profit = current_value - investment
+profit_percent = (profit / investment) * 100
+
+st.write("---")
+if profit > 0:
+    st.balloons()
+    st.success(f"**Result:** If price hits **{future_price}**, your profit is **{profit:.2f} AED** ({profit_percent:.1f}%)")
 else:
-    st.warning(f"### ⚖️ HOLD / WAIT\nCurrent price ({kt_24k}) is higher than the monthly average ({monthly_avg:.2f} AED).")
+    st.error(f"**Result:** If price hits **{future_price}**, your loss is **{abs(profit):.2f} AED** ({profit_percent:.1f}%)")
 
 st.divider()
 
-# 3. HISTORICAL CHART (Newest to Oldest)
-st.subheader("📊 24K Price Trend (Newest → Oldest)")
-# We keep the dates in the order provided (13 Apr down to 15 Mar)
+# 4. PRICE TREND
+st.subheader("📊 24K Price Trend (Newest to Oldest)")
+hist_dates = [f"{i} Apr" for i in range(13, 0, -1)] + [f"{i} Mar" for i in range(31, 14, -1)]
 df = pd.DataFrame({'Date': hist_dates, 'Price (AED)': hist_prices})
 st.line_chart(df.set_index('Date'))
-
-# 4. DATA LOG (For your reference)
-with st.expander("View Historical Data Log"):
-    st.table(df)
-
-# --- AUTOMATION TRIGGER ---
-if "trigger" in st.query_params:
-    try:
-        requests.post(f"https://ntfy.sh/{NTFY_TOPIC}", 
-            data=f"Latest Gold: {kt_24k} AED. Ounce: {kt_ounce} AED.".encode('utf-8'),
-            headers={"Title": "UAE Gold Live Update", "Priority": "high"})
-    except:
-        pass
