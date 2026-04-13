@@ -35,4 +35,43 @@ def get_live_prices():
         return 569.75, 17721.00, 569.75
 
 # --- APP UI ---
-st.title("💰 UAE Gold Live Tracker
+st.title("💰 UAE Gold Live Tracker")
+st.write(f"**Last Update Sync:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+
+kt_24k, kt_ounce, gn_24k = get_live_prices()
+
+# 1. LIVE METRICS (Exact Prices)
+m1, m2, m3 = st.columns(3)
+m1.metric("Khaleej Times 24K", f"{kt_24k} AED")
+m2.metric("Gulf News 24K", f"{gn_24k} AED")
+m3.metric("Live Ounce (KT)", f"{kt_ounce:,} AED")
+
+st.divider()
+
+# 2. SMART ADVICE (Now above the chart)
+st.subheader("🤖 Smart Investment Advice")
+if kt_24k < monthly_avg:
+    st.success(f"### ✅ BUY NOW\nCurrent price ({kt_24k}) is below the monthly average ({monthly_avg:.2f} AED).")
+else:
+    st.warning(f"### ⚖️ HOLD / WAIT\nCurrent price ({kt_24k}) is higher than the monthly average ({monthly_avg:.2f} AED).")
+
+st.divider()
+
+# 3. HISTORICAL CHART (Newest to Oldest)
+st.subheader("📊 24K Price Trend (Newest → Oldest)")
+# We keep the dates in the order provided (13 Apr down to 15 Mar)
+df = pd.DataFrame({'Date': hist_dates, 'Price (AED)': hist_prices})
+st.line_chart(df.set_index('Date'))
+
+# 4. DATA LOG (For your reference)
+with st.expander("View Historical Data Log"):
+    st.table(df)
+
+# --- AUTOMATION TRIGGER ---
+if "trigger" in st.query_params:
+    try:
+        requests.post(f"https://ntfy.sh/{NTFY_TOPIC}", 
+            data=f"Latest Gold: {kt_24k} AED. Ounce: {kt_ounce} AED.".encode('utf-8'),
+            headers={"Title": "UAE Gold Live Update", "Priority": "high"})
+    except:
+        pass
