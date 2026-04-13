@@ -34,4 +34,36 @@ def fetch_gulf_news():
     return base_price + adjustment_value
 
 # --- PREDICTION LOGIC ---
-def
+def get_advice(current_price, avg_price):
+    if current_price < (avg_price * 0.99):
+        return "✅ BUY NOW", "Price is below the monthly average."
+    elif current_price > (avg_price * 1.01):
+        return "⚠️ SELL / WAIT", "Price is higher than the monthly average."
+    else:
+        return "⚖️ HOLD", "Price is stable relative to the average."
+
+# --- UI LAYOUT ---
+st.title("🇦🇪 UAE Gold Smart Predictor")
+st.write(f"**Monthly 24K Average:** {monthly_avg:.2f} AED")
+
+# Get prices from both sources
+kt_price = fetch_khaleej_times()
+gn_price = fetch_gulf_news()
+
+# Display side-by-side
+col1, col2 = st.columns(2)
+
+with col1:
+    st.subheader("Khaleej Times")
+    st.metric("24K (+.75)", f"{kt_price:.2f} AED")
+    advice, msg = get_advice(kt_price, monthly_avg)
+    st.info(f"**{advice}**\n\n{msg}")
+
+with col2:
+    st.subheader("Gulf News")
+    st.metric("24K (+.75)", f"{gn_price:.2f} AED")
+    advice, msg = get_advice(gn_price, monthly_avg)
+    st.info(f"**{advice}**\n\n{msg}")
+
+st.divider()
+st.caption(f"Last updated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
